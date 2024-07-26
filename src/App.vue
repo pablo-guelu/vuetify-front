@@ -106,7 +106,15 @@
           </v-tabs-window-item>
 
           <v-tabs-window-item value="Usuarios">
-            <UserDataView :model="'Usuario'"/>
+            <UserDataView :model="'Usuario'" />
+          </v-tabs-window-item>
+
+          <v-tabs-window-item value="Integraciones">
+            <IntegrationsDataView :model="'Integración'" />
+          </v-tabs-window-item>
+
+          <v-tabs-window-item value="Equipos">
+            <TeamDataView :model="'Equipo'" />
           </v-tabs-window-item>
         </v-tabs-window>
       </v-sheet>
@@ -116,6 +124,8 @@
 </template>
 
 <script lang="ts" setup>
+import IntegrationsDataView from './integrations/IntegrationsDataView.vue';
+import TeamDataView from './teams/TeamDataView.vue';
 import UserDataView from './users/UserDataView.vue';
 
 

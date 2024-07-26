@@ -1,6 +1,6 @@
 <template>
     <v-sheet class="pa-10" color="transparent">
-        <v-data-table :headers="headers" :items="users">
+        <v-data-table :headers="headers" :items="integrations">
             <template v-slot:top>
                 <v-toolbar flat>
                     <v-toolbar-title>{{ `${model}s` }}</v-toolbar-title>
@@ -8,7 +8,7 @@
                     <v-spacer></v-spacer>
                     <v-dialog v-model="dialog" max-width="500px">
                         <template v-slot:activator="{ props }">
-                            <v-btn class="mb-2" color="primary" variant="tonal" v-bind="props" @click="editedIndex = 0">
+                            <v-btn class="mb-2" color="primary" variant="tonal" dark v-bind="props" @click="editedIndex = -1">
                                 {{ `New ${model}` }}
                             </v-btn>
                         </template>
@@ -20,28 +20,16 @@
                                 <v-container>
                                     <v-row>
                                         <v-col cols="12">
-                                            <v-text-field variant="outlined" v-model="defaultItem.first_name"
-                                                label="First Name"></v-text-field>
+                                            <v-text-field variant="outlined" v-model="defaultItem.name"
+                                                label="Name"></v-text-field>
                                         </v-col>
                                         <v-col cols="12">
-                                            <v-text-field variant="outlined" v-model="defaultItem.last_name"
-                                                label="Last Name"></v-text-field>
-                                        </v-col>
-                                        <v-col cols="12">
-                                            <v-text-field variant="outlined" v-model="defaultItem.email"
-                                                label="Email"></v-text-field>
+                                            <v-text-field variant="outlined" v-model="defaultItem.token"
+                                                label="Token"></v-text-field>
                                         </v-col>
                                         <v-col cols="12">
                                             <v-select :items="statuses" v-model="defaultItem.status" variant="outlined"
                                                 label="Status"></v-select>
-                                        </v-col>
-                                        <v-col v-if="integrations.length > 0" cols="12">
-                                            <v-select :item-props="IntegrationsProps" :items="integrations"
-                                            return-object
-                                            v-model="selectedIntegration"
-                                            @update:model-value="updateIntegration"
-                                            item-title="name" variant="outlined"
-                                            label="Integrations"></v-select>
                                         </v-col>
                                     </v-row>
                                 </v-container>
@@ -75,7 +63,7 @@
                 <v-icon class="me-2" size="small" @click="editItem(item)">
                     mdi-pencil
                 </v-icon>
-                <v-icon size="small" @click="deleteItem(item.user_id)">
+                <v-icon size="small" @click="deleteItem(item.integration_id)">
                     mdi-delete
                 </v-icon>
             </template>
@@ -86,62 +74,36 @@
 <script lang="ts" setup>
 import axios from 'axios';
 import { get } from 'node_modules/axios/index.cjs';
-import { title } from 'process';
 
 const props = defineProps({
     model: String,
 })
 
-const users = ref([])
-
-const getUsers = () => axios.get('http://localhost:8000/users').then((response) => {
-    console.log(response.data);
-    users.value = response.data
-})
-
-getUsers();
-
 const integrations = ref([])
 const getIntegrations = () => axios.get('http://localhost:8000/integrations').then((response) => {
+    console.log(response.data);
     integrations.value = response.data
 })
-
-getIntegrations();
-
-const IntegrationsProps = (integration) => {
-    return {
-        title: integration.name,
-    }
-}
-
-const selectedIntegration = ref(null)
-
-const updateIntegration = () => {
-    defaultItem.integration_id = selectedIntegration.value.integration_id === undefined ? null : selectedIntegration.value.integration_id
-}
+getIntegrations()
 
 const headers = [
     {
-        title: 'User ID',
+        title: 'Integration ID',
         sortable: false,
-        key: 'user_id',
+        key: 'integration_id',
     },
-    { title: 'First Name', key: 'first_name' },
-    { title: 'Last Name', key: 'last_name' },
-    { title: 'Email', key: 'email' },
+    { title: 'Name', key: 'name' },
+    { title: 'Token', key: 'token' },
     { title: 'Status', key: 'status' },
-    { title: 'Integration ID', key: 'integration_id' },
     { title: 'Actions', key: 'actions', sortable: false },
 ]
 
 const statuses = ['active', 'inactive']
 
 let defaultItem = reactive({
-    first_name: '',
-    last_name: '',
-    email: '',
+    name: '',
+    token: '',
     status: '',
-    integration_id: null,
 })
 
 const dialog = ref(false)
@@ -155,9 +117,12 @@ const close = () => {
 
 const save = () => {
     if (editedIndex.value < 0) {
-        axios.post('http://localhost:8000/users', defaultItem).then(() => getUsers())
+        axios.post('http://localhost:8000/integrations', defaultItem).then((response) => {
+            getIntegrations()
+        })
     } else {
-        axios.put(`http://localhost:8000/users/${editedIndex.value}`, defaultItem).then(() => getUsers())
+        axios.put(`http://localhost:8000/integrations/${editedIndex.value}`, defaultItem)
+        getIntegrations()
     }
     close()
 }
@@ -168,7 +133,7 @@ const closeDelete = () => {
 
 const editItem = (item) => {
     console.log(item)
-    editedIndex.value = item.user_id
+    editedIndex.value = item.integration_id
     defaultItem = Object.assign({}, item)
     dialog.value = true
 }
@@ -181,7 +146,7 @@ const deleteItem = (id) => {
 }
 
 const deleteItemConfirm = () => {
-    axios.delete(`http://localhost:8000/users/${toDeleteId.value}`).then(() => getUsers())
+    axios.delete(`http://localhost:8000/integrations/${toDeleteId.value}`).then(() => getIntegrations())
     closeDelete()
 }
 </script>
